@@ -1,0 +1,37 @@
+name: Kakao Message Notifier
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-kakao-message:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 레포지토리 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 의존성 설치
+        run: pip install requests
+
+      - name: 카카오톡 메시지 전송
+        id: send
+        env:
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_ACCESS_TOKEN: ${{ secrets.KAKAO_ACCESS_TOKEN }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+        run: python send_kakao.py
+
+      - name: 토큰 갱신 시 Secrets 업데이트 안내
+        if: steps.send.outputs.token_updated == 'true'
+        run: |
+          echo "::warning::access_token이 갱신되었습니다."
+          echo "::warning::GitHub Secrets의 KAKAO_ACCESS_TOKEN을 새 값으로 업데이트해야 다음 실행이 정상 동작합니다."
+          echo "::warning::새 access_token: ${{ steps.send.outputs.new_access_token }}"
